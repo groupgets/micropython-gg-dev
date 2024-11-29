@@ -764,6 +764,10 @@ typedef uint64_t mp_uint_t;
 #define MICROPY_GC_HOOK_LOOP(i)
 #endif
 
+#ifndef MICROPY_NLR_RAISE_HOOK
+#define MICROPY_NLR_RAISE_HOOK
+#endif
+
 // Whether to provide m_tracked_calloc, m_tracked_free functions
 #ifndef MICROPY_TRACKED_ALLOC
 #define MICROPY_TRACKED_ALLOC (0)

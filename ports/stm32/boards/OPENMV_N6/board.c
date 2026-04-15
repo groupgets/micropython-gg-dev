@@ -97,7 +97,7 @@ void board_enter_bootloader(unsigned int n_args, const void *args) {
     NVIC_SystemReset();
 }
 
-static char _boot_mem[128] __attribute__((aligned(1024)));
+static char _boot_mem[128] __attribute__((aligned(1024), section(".ram_function_data")));
 
 __attribute__((naked, noreturn, section(".ram_function"))) void ram_reset(void) {
     // NVIC_SystemReset doesn't get inlined here.

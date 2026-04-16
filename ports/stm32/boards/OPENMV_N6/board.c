@@ -119,7 +119,7 @@ void board_early_init(void) {
 
 void board_enter_standby(void) {
     HAL_PWREx_EnableTCMRetention();
-    HAL_PWREx_EnableTCMFLXRetention();
+    HAL_PWREx_DisableTCMFLXRetention();
 
     uint32_t *boot_mem = (uint32_t *)_boot_mem;
     boot_mem[0] = (uint32_t)(_boot_mem + sizeof(_boot_mem));

@@ -1346,7 +1346,7 @@ pending_exception_check:
                 MICROPY_VM_HOOK_LOOP
 
                 // Check for pending exceptions or scheduled tasks to run.
-                // Note: it's safe to just call mp_handle_pending(true), but
+                // Note: it's safe to just call mp_handle_pending(...), but
                 // we can inline the check for the common case where there is
                 // neither.
                 if (
@@ -1368,7 +1368,7 @@ pending_exception_check:
                 #endif
                 ) {
                     MARK_EXC_IP_SELECTIVE();
-                    mp_handle_pending(true);
+                    mp_handle_pending(MP_HANDLE_PENDING_CALLBACKS_AND_EXCEPTIONS);
                 }
 
                 #if MICROPY_PY_THREAD_GIL
@@ -1476,6 +1476,7 @@ unwind_loop:
 
             if (exc_sp >= exc_stack) {
                 // catch exception and pass to byte code
+                MICROPY_VM_HOOK_EXC
                 code_state->ip = exc_sp->handler;
                 mp_obj_t *sp = MP_TAGPTR_PTR(exc_sp->val_sp);
                 // save this exception in the stack so it can be used in a reraise, if needed

@@ -58,6 +58,7 @@ static mp_obj_t usb_device_make_new(const mp_obj_type_t *type, size_t n_args, si
         o->desc_dev = mp_const_none;
         o->desc_cfg = mp_const_none;
         o->desc_strs = mp_const_none;
+        o->desc_qual = mp_const_none;
         o->open_itf_cb = mp_const_none;
         o->reset_cb = mp_const_none;
         o->control_xfer_cb = mp_const_none;

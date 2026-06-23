@@ -88,6 +88,7 @@
 #include "usb.h"
 #endif
 
+extern void omv_gpio_irq_handler(uint32_t line);
 #if defined(MICROPY_HW_USB_FS)
 extern PCD_HandleTypeDef pcd_fs_handle;
 #endif
@@ -581,6 +582,9 @@ void RTC_WKUP_IRQHandler(void)
     RTC->ISR &= ~RTC_ISR_WUTF; // clear wakeup interrupt flag
     #endif
     Handle_EXTI_Irq(EXTI_RTC_WAKEUP); // clear EXTI flag and execute optional callback
+    #ifdef __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG
+    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG(); // Clear the EXTI's line Flag for RTC WakeUpTimer
+    #endif
     IRQ_EXIT(RTC_WKUP_IRQn);
 }
 #endif
@@ -730,6 +734,7 @@ void TIM3_IRQHandler(void) {
 void TIM4_IRQHandler(void) {
     IRQ_ENTER(TIM4_IRQn);
     timer_irq_handler(4);
+    HAL_TIM_IRQHandler(&TIM4_Handle);
     IRQ_EXIT(TIM4_IRQn);
 }
 #endif
@@ -737,7 +742,6 @@ void TIM4_IRQHandler(void) {
 void TIM5_IRQHandler(void) {
     IRQ_ENTER(TIM5_IRQn);
     timer_irq_handler(5);
-    HAL_TIM_IRQHandler(&TIM5_Handle);
     IRQ_EXIT(TIM5_IRQn);
 }
 

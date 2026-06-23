@@ -46,22 +46,22 @@
 // SPI6_RX: DMA2_Stream6.CHANNEL_1
 
 #if defined(MICROPY_HW_SPI1_SCK)
-static SPI_HandleTypeDef SPIHandle1 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle1 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SPI2_SCK)
-static SPI_HandleTypeDef SPIHandle2 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle2 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SPI3_SCK)
-static SPI_HandleTypeDef SPIHandle3 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle3 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SPI4_SCK)
-static SPI_HandleTypeDef SPIHandle4 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle4 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SPI5_SCK)
-static SPI_HandleTypeDef SPIHandle5 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle5 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SPI6_SCK)
-static SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
+SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
 #endif
 #if defined(MICROPY_HW_SUBGHZSPI_ID)
 static SPI_HandleTypeDef SPIHandleSubGhz = {.Instance = NULL};
@@ -510,6 +510,12 @@ int spi_init(const spi_t *self, bool enable_nss_pin) {
 }
 
 void spi_deinit(const spi_t *spi_obj) {
+    if (spi_obj->rx_dma_descr != NULL) {
+        dma_deinit(spi_obj->rx_dma_descr);
+    }
+    if (spi_obj->tx_dma_descr != NULL) {
+        dma_deinit(spi_obj->tx_dma_descr);
+    }
     SPI_HandleTypeDef *spi = spi_obj->spi;
     HAL_SPI_DeInit(spi);
     if (0) {
@@ -592,7 +598,14 @@ static HAL_StatusTypeDef spi_wait_dma_finished(const spi_t *spi, uint32_t t_star
             enable_irq(irq_state);
             return HAL_OK;
         }
+        // See DM00257543 2.2.5
+        // The DTCM-RAM is not accessible in read during Sleep mode (when the CPU clock is
+        // gated). When a read access to the DTCM-RAM is performed by an AHB bus master
+        // (that are the DMAs) while the CPU is in sleep mode (CPU clock is gated), the
+        // data is not transmitted to the AHB bus and the AHB master reads 0x0000_0000.
+        #if !defined(STM32F7)
         __WFI();
+        #endif
         enable_irq(irq_state);
         if (HAL_GetTick() - t_start >= timeout) {
             return HAL_TIMEOUT;
@@ -614,7 +627,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
 
     if (dest == NULL) {
         // send only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(src)) {
             status = HAL_SPI_Transmit(self->spi, (uint8_t *)src, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma;
@@ -640,7 +653,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else if (src == NULL) {
         // receive only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(dest)) {
             status = HAL_SPI_Receive(self->spi, dest, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;
@@ -676,7 +689,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else {
         // send and receive
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(src) || !DMA_BUFFER(dest)) {
             status = HAL_SPI_TransmitReceive(self->spi, (uint8_t *)src, dest, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;

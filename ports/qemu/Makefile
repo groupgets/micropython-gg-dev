@@ -239,7 +239,7 @@ SRC_QSTR += $(SRC_C) $(LIBM_SRC_C)
 ################################################################################
 # Main targets
 
-all: $(BUILD)/firmware.elf
+all: $(OBJ)
 
 .PHONY: repl
 repl: $(BUILD)/firmware.elf

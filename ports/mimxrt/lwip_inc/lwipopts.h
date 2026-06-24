@@ -21,7 +21,9 @@
 // loop is blocked ~86ms per JPEG encode, so every extra TCP drain cycle costs
 // a full encode period and divides the delivered MJPEG frame rate.
 #define TCP_SND_BUF (32 * TCP_MSS)
-#define MEMP_NUM_TCP_SEG (64)
+// lwIP derives TCP_SND_QUEUELEN as 4 * TCP_SND_BUF / TCP_MSS by default, so
+// keep the segment pool large enough for the 32*MSS send buffer.
+#define MEMP_NUM_TCP_SEG (128)
 
 // Relocate the lwIP heap and memp pools out of DTCM (which has no headroom
 // for the larger MEM_SIZE above) into the dedicated .lwip section placed in
